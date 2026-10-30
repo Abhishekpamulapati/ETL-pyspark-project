@@ -107,3 +107,47 @@ def clean_price_column(df):
 
     return df_flagged.drop("price", "price_cleaned")
 
+#Standardizing dates is a common ETL task. Here we try multiple common formats 
+#and use coalesce to pick the first one that works.
+#We also log how many dates we couldn't parse, so we can investigate further if needed.
+
+def standardize_dates(df):
+    """Parse dates in multiple common formats"""
+
+    # Try each format - coalesce returns the first non-null result
+    fmt1 = to_date(col("order_date"), "yyyy-MM-dd")
+    fmt2 = to_date(col("order_date"), "MM/dd/yyyy")
+    fmt3 = to_date(col("order_date"), "dd-MM-yyyy")
+
+    df_parsed = df.withColumn(
+        "order_date_parsed",
+        coalesce(fmt1, fmt2, fmt3)
+    )
+
+    # Check how many we couldn't parse
+    unparsed = df_parsed.filter(col("order_date_parsed").isNull()).count()
+    if unparsed > 0:
+        logger.warning(f"Could not parse {unparsed} dates")
+
+    return df_parsed.drop("order_date")
+
+#We are removing test data that may have been accidentally included in production.
+#This is a common step in ETL pipelines to ensure data quality.
+#We're checking for "TEST" in customer IDs and product names, plus filtering out any rows with null order IDs or customer IDs.
+#That tilde (~) means "not", so we're keeping everything that doesn't match these patterns.
+
+def remove_test_data(df):
+    """Remove test orders that somehow made it to production"""
+
+    df_filtered = df.filter(
+        ~(upper(col("customer_id")).contains("TEST") |
+          upper(col("product_name")).contains("TEST") |
+          col("customer_id").isNull() |
+          col("order_id").isNull())
+    )
+
+    removed_count = df.count() - df_filtered.count()
+    logger.info(f"Removed {removed_count} test/invalid orders")
+
+    return df_filtered
+
