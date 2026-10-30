@@ -91,9 +91,10 @@ def clean_price_column(df):
         .otherwise(0.0)
     )
 
-    # Flag suspicious values for review --The regexp_replace function strips out everything that isn't a digit or decimal point.
-    #  Then we convert to a proper decimal type. The quality flag column helps us track suspicious values without throwing them 
-    # out.
+    # Flag suspicious values for review --The regexp_replace function strips out everything that isn't a digit
+    #or decimal point. Then we convert to a proper decimal type. The quality flag column helps us track suspicious
+    #values without throwing them out.
+    
     df_flagged = df_final.withColumn(
         "price_quality_flag",
         when(col("price_decimal") == 0.0, "CHECK_ZERO_PRICE")
@@ -151,3 +152,51 @@ def remove_test_data(df):
 
     return df_filtered
 
+#Logging the number of duplicates removed is important for transparency and debugging.
+
+def handle_duplicates(df):
+    """Remove duplicate orders (usually from retries)"""
+
+    df_deduped = df.dropDuplicates(["order_id"])
+
+    duplicate_count = df.count() - df_deduped.count()
+    if duplicate_count > 0:
+        logger.info(f"Removed {duplicate_count} duplicate orders")
+
+    return df_deduped
+
+#chaining all the transformations together in a single function makes it easy to apply them in sequence
+#and maintain a clear flow in the ETL process.
+
+def transform_orders(df):
+    """Apply all transformations in sequence"""
+
+    logger.info("Starting data transformation...")
+
+    # Clean each aspect of the data
+    df = clean_customer_id(df)
+    df = clean_price_column(df)
+    df = standardize_dates(df)
+    df = remove_test_data(df)
+    df = handle_duplicates(df)
+
+    # Cast quantity to integer
+    df = df.withColumn(
+        "quantity",
+        when(col("quantity").isNotNull(), col("quantity").cast(IntegerType()))
+        .otherwise(1)
+    )
+
+    # Add some useful calculated fields
+    df = df.withColumn("total_amount", col("price_decimal") * col("quantity")) \
+           .withColumn("processing_date", current_date()) \
+           .withColumn("year", year(col("order_date_parsed"))) \
+           .withColumn("month", month(col("order_date_parsed")))
+
+    # Rename for clarity
+    df = df.withColumnRenamed("order_date_parsed", "order_date") \
+           .withColumnRenamed("price_decimal", "unit_price")
+
+    logger.info(f"Transformation complete. Final record count: {df.count()}")
+
+    return df
