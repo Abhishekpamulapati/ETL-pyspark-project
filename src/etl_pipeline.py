@@ -94,7 +94,7 @@ def clean_price_column(df):
     # Flag suspicious values for review --The regexp_replace function strips out everything that isn't a digit
     #or decimal point. Then we convert to a proper decimal type. The quality flag column helps us track suspicious
     #values without throwing them out.
-    
+
     df_flagged = df_final.withColumn(
         "price_quality_flag",
         when(col("price_decimal") == 0.0, "CHECK_ZERO_PRICE")
@@ -200,3 +200,27 @@ def transform_orders(df):
     logger.info(f"Transformation complete. Final record count: {df.count()}")
 
     return df
+
+#Saving the transformed data in CSV format is a common practice in ETL pipelines,
+#as it provides efficient storage and retrieval for large datasets.
+# In real production scenarios, you might also consider saving in Parquet or another columnar format for better performance.
+
+def load_to_csv(spark, df, output_path):
+    """Save processed data for downstream use"""
+
+    logger.info(f"Writing {df.count()} records to {output_path}")
+
+    # Convert to pandas for local development ONLY (not suitable for large datasets)
+    pandas_df = df.toPandas()
+
+    # Create output directory if needed
+    import os
+    os.makedirs(output_path, exist_ok=True)
+
+    output_file = f"{output_path}/orders.csv"
+    pandas_df.to_csv(output_file, index=False)
+
+    logger.info(f"Successfully wrote {len(pandas_df)} records")
+    logger.info(f"Output location: {output_file}")
+
+    return len(pandas_df)
