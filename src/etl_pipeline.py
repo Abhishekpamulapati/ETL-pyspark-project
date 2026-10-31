@@ -224,3 +224,66 @@ def load_to_csv(spark, df, output_path):
     logger.info(f"Output location: {output_file}")
 
     return len(pandas_df)
+
+#Validating the data and creating the summary report is crucial for ensuring the integrity of the ETL process.
+#Quick validation using Spark SQL allows us to check for anomalies and confirm that the data meets our expectations
+#before it is used downstream.
+
+def sanity_check_data(spark, output_path):
+    """Quick validation using Spark SQL"""
+
+    # Read the CSV file back
+    output_file = f"{output_path}/orders.csv"
+    df = spark.read.csv(output_file, header=True, inferSchema=True)
+    df.createOrReplaceTempView("orders")
+
+    # Run some quick validation queries
+    total_count = spark.sql("SELECT COUNT(*) as total FROM orders").collect()[0]['total']
+    logger.info(f"Sanity check - Total orders: {total_count}")
+
+    # Check for any suspicious data that slipped through
+    zero_price_count = spark.sql("""
+        SELECT COUNT(*) as zero_prices
+        FROM orders
+        WHERE unit_price = 0
+    """).collect()[0]['zero_prices']
+
+    if zero_price_count > 0:
+        logger.warning(f"Found {zero_price_count} orders with zero price")
+
+    # Verify date ranges make sense
+    date_range = spark.sql("""
+        SELECT
+            MIN(order_date) as earliest,
+            MAX(order_date) as latest
+        FROM orders
+    """).collect()[0]
+
+    logger.info(f"Date range: {date_range['earliest']} to {date_range['latest']}")
+
+    return True
+
+#Creating Summary Report: This function generates a summary report of the processed data, 
+# providing insights into sales performance across different regions and time periods. 
+# It aggregates total sales, order counts, and average order values, which can be useful for business analysis
+#and decision-making.
+
+def create_summary_report(df):
+    """Generate metrics about the ETL run"""
+
+    summary = {
+        "total_orders": df.count(),
+        "unique_customers": df.select("customer_id").distinct().count(),
+        "unique_products": df.select("product_name").distinct().count(),
+        "total_revenue": df.agg(sum("total_amount")).collect()[0][0],
+        "date_range": f"{df.agg(min('order_date')).collect()[0][0]} to {df.agg(max('order_date')).collect()[0][0]}",
+        "regions": df.select("region").distinct().count()
+    }
+
+    logger.info("\n=== ETL Summary Report ===")
+    for key, value in summary.items():
+        logger.info(f"{key}: {value}")
+    logger.info("========================\n")
+
+    return summary
+
