@@ -1,15 +1,17 @@
+# main.py - Just the skeleton for now
+# main.py
 from pyspark.sql import SparkSession
 import logging
 import sys
 import traceback
 from datetime import datetime
-from src.etl_pipeline import *
 import os
+
+# Import our ETL functions
+from src.etl_pipeline import *
 
 def setup_logging():
     """Basic logging setup"""
-    # Create logs directory if it doesn't exist
-    os.makedirs('logs', exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,
@@ -23,6 +25,10 @@ def setup_logging():
 
 def main():
     """Main ETL pipeline"""
+
+    # Create necessary directories
+    os.makedirs('logs', exist_ok=True)
+    os.makedirs('data/processed/orders', exist_ok=True)
 
     logger = setup_logging()
     logger.info("Starting Grocery ETL Pipeline")
