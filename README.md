@@ -91,7 +91,3 @@ Successful output will be in `data/processed/orders/orders.csv` with a summary r
 - **Real-world transformations**: Cleaning messy strings, standardizing formats
 - **Data quality**: Flagging suspicious values, removing test data
 - **Production practices**: Logging, validation checks, summary reports
-
-## Questions?
-
-Open an issue in this repository or ask in the [Dataquest Community](https://community.dataquest.io/).
