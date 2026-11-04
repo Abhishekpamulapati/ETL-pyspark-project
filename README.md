@@ -46,7 +46,7 @@ These are the exact issues encountered in real production data.
 
 ## Overview
 
-The complete project at: **[[LINK TO TUTORIAL](https://github.com/Abhishekpamulapati/ETL-pyspark-project)]**
+The complete project at: **[[LINK TO PROJECT](https://github.com/Abhishekpamulapati/ETL-pyspark-project)]**
 
 This project walks through:
 1. Setting up a professional ETL project structure
@@ -57,13 +57,11 @@ This project walks through:
 
 ## Quick Start
 
-After following the tutorial, run your completed pipeline:
+After following the project completion, ran my completed pipeline:
 
 ```bash
 spark-submit main.py
 ```
-
-Successful output will be in `data/processed/orders/orders.csv` with a summary report in `logs/`.
 
 ## What I Learned during this project
 
