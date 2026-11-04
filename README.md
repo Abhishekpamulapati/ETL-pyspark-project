@@ -1,4 +1,4 @@
-# Building Your First ETL Pipeline with PySpark
+# Building ETL Pipeline with PySpark
 
 Code and sample data for the portfolio project of **"Building Real ETL Pipeline with PySpark."**
 
