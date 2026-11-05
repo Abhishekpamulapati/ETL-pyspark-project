@@ -4,7 +4,7 @@ Code and sample data for the portfolio project of **"Building Real ETL Pipeline 
 
 The PySpark data engineering is about building pipelines that run reliably with messy, real-world data. This project walks you through building a complete ETL pipeline from scratch.
 
-## What is Build
+## What is Built
 
 A production-ready ETL pipeline that:
 - Reads messy CSV data from multiple sources (online orders, store orders, mobile orders)
